@@ -27,6 +27,9 @@ class PathNode {
   get d() {
     return this.pos[3];
   }
+  constructor(mapId, x, y, d) {
+    this.pos = [mapId, x, y, d];
+  }
 }
 
 class Game_NPCEvent extends Game_Event {
@@ -109,7 +112,7 @@ class Game_NPC {
     this.pos = dest.pos;
 
     // NPC登场
-    if (this.mapId === $gameMap.mapId) {
+    if (this.mapId === $gameMap.mapId()) {
       const event = Game_NPCEvent.loadNewEvent(this.name);
       this.eventId = event._eventId;
     }
@@ -118,6 +121,8 @@ class Game_NPC {
   // 场景内NPC位置更新
   onSceneMovementUpdate() {
     let list;
+    let dest;
+
     // 设置队列list的值:
     if (this.routineIsEmpty()) {
       if (this.patrolIsEmpty()) return;
@@ -138,7 +143,7 @@ class Game_NPC {
         list === this.patrol;
       }
       if (!list.length) {
-        this.setDirection(dest.d);
+        this.event.setDirection(dest.d);
         this.pos = dest.pos;
         return;
       }
@@ -146,8 +151,9 @@ class Game_NPC {
     }
 
     // NPC离场
-    if (dest.mapId !== $gameMap.mapId) {
+    if (dest.mapId !== $gameMap.mapId()) {
       this.event.unloadFromScene();
+      this.pos = dest;
       return;
     }
 
@@ -157,7 +163,10 @@ class Game_NPC {
     this.event.moveForward();
 
     // 记录NPC位置
-    this.pos = dest.pos;
+    if (this.event) {
+      let e = this.event;
+      this.pos = [e._mapId, e.x, e.y, e._direction];
+    }
   }
 
   // NPC行为模式更新
