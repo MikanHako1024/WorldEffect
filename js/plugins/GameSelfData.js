@@ -94,9 +94,21 @@
     return getKeysHelper(dataKey);
   };
 
+  const setValueByEvent = (event, key, value) => {
+    const dataKey = getDataKeyFromEvent(event, key);
+    return $gameSelfData.setValue(dataKey, value);
+  };
+
+  const getValueByEvent = (event, key) => {
+    const dataKey = getDataKeyFromEvent(event, key);
+    return $gameSelfData.value(dataKey);
+  };
+
   window.SelfData = {
     setValue,
     getValue,
     getKeys,
+    setValueByEvent, 
+    getValueByEvent, 
   };
 }

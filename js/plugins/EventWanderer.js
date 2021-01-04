@@ -1,10 +1,16 @@
 /*:
  * @target MZ
- *
+ * 
+ * @param templateMapId
+ * @text 事件模板地图id
+ * @type number
+ * @default 2
  */
 
 {
-  const eventMapId = 2;
+  const parameters = PluginManager.parameters('EventWanderer');
+  const eventMapId = Number(parameters['templateMapId']) || 2;
+
   const filename = `Map${eventMapId.padZero(3)}.json`;
   DataManager._databaseFiles.push({ name: '$dataEventMap', src: filename });
 
@@ -26,9 +32,31 @@
     getDataKey(key) {
       return `#${this.name},${key}`;
     }
+
+    // temp
+    unloadFromScene() {
+      const characterSprites = SceneManager._scene._spriteset._characterSprites;
+      const sId = characterSprites.findIndex((s) => s && s._character === this);
+      if (sId >= 0) {
+        const s = characterSprites[sId];
+        characterSprites[sId] = null;
+        SceneManager._scene._spriteset._tilemap.removeChild(s);
+      }
+      $gameMap._events[this._eventId] = null;
+    };
+
+    // temp
+    loadToScene() {
+      let eventId = $gameMap._events.length;
+      $gameMap._events[eventId] = this;
+      let sprite = new Sprite_Character(this);
+      var spriteset = SceneManager._scene._spriteset;
+      spriteset._characterSprites.splice(eventId-1, 0, sprite);
+      spriteset._tilemap.addChildAt(sprite, eventId);
+    };
   }
 
-  const $gameEvents = [];
+  const $gameEvents = []; // $dataTemplateEvent
   const createDynamicEventData = (name, mapId, templateId, payload) => {
     const eventData = {
       name, // 唯一标识名
@@ -37,20 +65,32 @@
       payload, // 初始化信息
     };
     $gameEvents.push(eventData);
+    return eventData;
+  };
+
+  const createDynamicEvent = (eventData, mapId, eventId) => {
+    let event = new Game_DynamicEvent(
+      eventData.name,
+      mapId,
+      eventId,
+      eventData.templateId,
+    );
+    setupEventData(event, eventData.payload);
+    return event;
   };
 
   // 加载数据
   const setupEventData = (event, payload) => {
     // 判断Event是否加载过
-    if (!SelfData.getValue(event, 'init')) {
+    if (!SelfData.getValueByEvent(event, 'init')) {
       // 初始化Event
       for (const each in payload) {
-        SelfData.setValue(event, each, payload[each]);
+        SelfData.setValueByEvent(event, each, payload[each]);
       }
-      SelfData.setValue(event, 'init', true);
+      SelfData.setValueByEvent(event, 'init', true);
     }
     // 加载位置
-    const [x, y] = SelfData.getValue(event, 'pos');
+    const [x, y] = SelfData.getValueByEvent(event, 'pos');
     event.setPosition(x, y);
   };
 
@@ -59,16 +99,11 @@
     setupEvents.call(this);
     $gameEvents
       .filter(Boolean)
-      .filter((event) => event.mapId === this._mapId)
-      .forEach((event) => {
+      .filter((eventData) => eventData.mapId === this._mapId)
+      .forEach((eventData) => {
         let eventId = this._events.length;
-        this._events[eventId] = new Game_DynamicEvent(
-          event.name,
-          this._mapId,
-          eventId,
-          event.templateId,
-        );
-        setupEventData(this._events[eventId], event.payload);
+        var event = createDynamicEvent(eventData, this._mapId, eventId);
+        this._events[eventId] = event;
       });
   };
 
@@ -104,5 +139,11 @@
 
   window.EventWanderer = {
     createDynamicEventData,
+    createDynamicEvent,
   };
+  window.$gameEvents = $gameEvents;
+  window.Game_DynamicEvent = Game_DynamicEvent;
 }
+
+// for test
+EventWanderer.createDynamicEventData('demo3', 8, 4, {a:1, pos:[2,9]});
