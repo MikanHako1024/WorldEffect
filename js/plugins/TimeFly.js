@@ -14,6 +14,8 @@
   // 每小时事件
   const everyHourEvents = [];
 
+  const every5MinuteEvents = [];
+
   // TODO: 每天事件
 
   const overflows = [
@@ -21,6 +23,11 @@
       periodSize: 60 * 60 * 60,
       triggerPos: 0 * 60 * 60, 
       handlers: everyHourEvents,
+    },
+    {
+      periodSize: 5 * 60 * 60,
+      triggerPos: 0 * 60 * 60, 
+      handlers: every5MinuteEvents,
     },
   ];
   // 判断是否触发周期事件
@@ -51,6 +58,10 @@
   const setTimeRatio = (value) => (timeRatio = value);
   const getTimeRatio = () => timeRatio;
 
+  const adjustmentTime = (time) => {
+    frames = time;
+  };
+
   const tick = (n = 1) => {
     lastFrames = frames;
     frames += timeRatio * n;
@@ -60,9 +71,9 @@
   const display = () => frames;
 
   const displayTime = () => {
-    const s = getSeconds().toString().padStart(2, 0);
-    const m = getMinutes().toString().padStart(2, 0);
-    const H = getHours().toString().padStart(2, 0);
+    const s = (Math.floor(frames / 60) % 60).toString().padStart(2, 0);
+    const m = (Math.floor(frames / 60 / 60) % 60).toString().padStart(2, 0);
+    const H = (Math.floor(frames / 60 / 60 / 60) % 24).toString().padStart(2, 0);
     return `${H}:${m}:${s}`;
   };
 
@@ -106,9 +117,12 @@
     display,
     displayTime,
 
+    adjustmentTime,
+
     setTimeRatio,
     getTimeRatio,
 
     everyHourEvents, // 注册每日事件
+    every5MinuteEvents, 
   };
 }
