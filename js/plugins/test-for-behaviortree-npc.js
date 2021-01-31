@@ -352,9 +352,15 @@ npc.executeBehaviortree = () => {
 const _Game_NPCEvent_updateSelfMovement = Game_NPCEvent.prototype.updateSelfMovement;
 Game_NPCEvent.prototype.updateSelfMovement = function() {
 	if (this.data && this.data._behaviortree) {
-		this.setMovementSuccess(true);
-		//console.log('场景内');
-		this.data.executeBehaviortree();
+		if (
+			!this._locked &&
+			this.isNearTheScreen() &&
+			this.checkStop(this.stopCountThreshold())
+		) {
+			this.setMovementSuccess(true);
+			//console.log('场景内');
+			this.data.executeBehaviortree();
+		}
 	}
 	else {
 		_Game_NPCEvent_updateSelfMovement.apply(this, arguments);
@@ -373,9 +379,6 @@ TimeFly.every5MinuteEvents.push((n) => {
 TimeFly.everyHourEvents.push((n) => {
 	console.log(TimeFly.displayTime());
 });
-
-
-// TODO : 对话暂停
 
 
 return {
